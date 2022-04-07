@@ -1,0 +1,27 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Image uploader</title>
+	<link rel="stylesheet" type="text/css" href="/static/css/style.css">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	{{block "styles" .}}
+	{{end}}
+</head>
+<body>
+	<div class="container">
+{{/*		<header>Header from base layout</header>*/}}
+		<main>
+        {{block "content" .}}
+        {{end}}
+		</main>
+		<footer>
+			<span>Created by <bold>Carlos Mejía (Mecamon)</bold> - devchallenges.io</span>
+		</footer>
+      {{block "js" .}}
+      {{end}}
+	</div>
+</body>
+</html>
+{{end}}

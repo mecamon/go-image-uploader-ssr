@@ -1,0 +1,192 @@
+{{template "base" .}}
+{{define "content"}}
+	<section>
+	</section>
+{{end}}
+{{define "styles"}}
+	<link rel="stylesheet" type="text/css" href="/static/css/home.css">
+{{end}}
+{{define "js"}}
+	<script>
+
+	const allowedTypes = ['image/jpeg', 'image/png']
+	let isDropped = false
+	let section = document.querySelector('section')
+	let uploadButton
+	let fileInput
+	let copyButton
+	let dropArea
+	const dropCard = `
+				<div id="drop-card" class="card">
+					<h2>Upload your image</h2>
+					<small>File should be .jpeg or .png</small>
+					<div id="drop-area" class="drop-area">
+						<img src="/static/images/drop-area-bg.svg" alt="image placeholder">
+						<span class="grey-text">Drag and drop your image here</span>
+					</div>
+					<span class="grey-text">Or</span>
+					<button class="btn accent-btn">Choose a file</button>
+					<input type="file" hidden id="file-input">
+				</div>
+			`
+  const uploadedCard = `
+				<div id="uploaded-card" class="card">
+					<span class="material-icons success-text">check_circle</span>
+					<h2>Uploaded successfully!</h2>
+					<div id="image-uploaded-area" class="image-uploaded-area">
+						<img src="/static/images/drop-area-bg.svg" alt="image placeholder">
+					</div>
+					<div class="copy-link-zone">
+						<input type="text" name="image-link" disabled id="image-link">
+						<button class="btn accent-btn" id="copy-btn">Copy link</button>
+					</div>
+				</div>
+			`
+	const loadingCard = `
+				<div id="loading-card" class="card">
+					<div class="loading-area">
+							<h2>Uploading your image...</h2>
+					</div>
+					<div class="loading-container">
+						<div class="loading-bar"></div>
+					</div>
+				</div>
+			`
+
+	section.innerHTML = dropCard
+	addTagsAndEvents()
+
+  function addTagsAndEvents() {
+		fileInput = document.querySelector('#file-input')
+		uploadButton = document.querySelector('button')
+		dropArea = document.querySelector('#drop-area')
+		dropArea.addEventListener('dragover', onDragover)
+		dropArea.addEventListener('drop', onDropped)
+		uploadButton.addEventListener('click', onClickUploadButton)
+		fileInput.addEventListener('change', onChange)
+  }
+
+  function onClickUploadButton() {
+		fileInput.click()
+	}
+
+	function onChange(e) {
+		const file = e.target.files[0]
+		const err = erraticFile(file)
+		if (err) {
+				setFileError(err)
+		} else {
+				uploadFile(file)
+		}
+	}
+
+  function removeEvents() {
+		uploadButton.removeEventListener(onClickUploadButton)
+		fileInput.removeEventListener(onChange)
+		dropArea.removeEventListener(onDragover)
+		dropArea.removeEventListener(onDropped)
+  }
+
+	function onDropped(e) {
+		e.preventDefault()
+		const file = e.dataTransfer.files[0]
+		const err = erraticFile(file)
+
+		if (err) {
+			setFileError(err)
+		} else {
+			uploadFile(file)
+		}
+	}
+
+	function erraticFile(file) {
+		removeWarningText()
+		if (!hasAValidType(file)) {
+			return 'Wrong file type!'
+		}
+		if (!hasAValidSize(file)) {
+			return 'File too big!'
+		}
+		return null
+	}
+
+	function setFileError(err) {
+		const warningSpan = document.createElement('span')
+		warningSpan.classList.add('warning-text')
+		warningSpan.innerText = err
+		section.appendChild(warningSpan)
+	}
+
+	function removeWarningText() {
+		const span = document.querySelector('.warning-text')
+		const section = document.querySelector('section')
+		if (span) {
+			section.removeChild(span)
+		}
+	}
+
+	async function uploadFile(file) {
+		section.removeChild(document.querySelector('#drop-card'))
+		section.innerHTML = loadingCard
+		const fd = new FormData
+		fd.append('image', file)
+
+		try {
+			const data = await ajaxCall(fd)
+			showUploadDetails(data)
+		} catch (e) {
+			section.removeChild(document.querySelector('#uploaded-card'))
+			section.innerHTML = dropCard
+		}
+	}
+
+	async function ajaxCall(fd) {
+     const response = await fetch('http://localhost:8080/upload', {
+				headers: {
+						'Content-Type': 'multipart/form-data'
+				},
+				method: 'POST',
+				body: fd
+		})
+
+		if (response.ok) {
+			const jsonData = await response.json()
+			return Promise.resolve(jsonData)
+    } else {
+			return Promise.reject(response.error())
+		}
+	}
+
+	function showUploadDetails(data) {
+		section.removeChild(document.querySelector('#loading-card'))
+		section.innerHTML = uploadedCard
+		const imageLinkInput = document.querySelector('#image-link')
+		imageLinkInput.value = data.url
+		copyButton = document.querySelector('#copy-btn')
+		copyButton.addEventListener('click', copyLink)
+	}
+
+	function onDragover(e) {
+		e.preventDefault()
+	}
+
+	function hasAValidType(file) {
+		const type = file.type
+		return allowedTypes.includes(type)
+	}
+
+	function hasAValidSize(file) {
+		const size = file.size
+		return size < 5000000
+	}
+
+	function copyLink() {
+		const input = document.querySelector('#image-link')
+		input.select()
+		input.setSelectionRange(0, 99999)
+		navigator.clipboard.writeText(input.value)
+		alert("Copied the text: " + input.value)
+	}
+
+	</script>
+{{end}}
