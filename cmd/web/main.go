@@ -25,6 +25,7 @@ func main() {
 	handler := routes.MakeRouter()
 
 	log.Printf("Server running on port %s...", portNumber)
+
 	log.Fatal(http.ListenAndServe(portNumber, handler))
 }
 
